@@ -1,9 +1,11 @@
+#%%
 from pymoo.core.problem import Problem
 from pymoo.core.repair import Repair
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
-from src.workorder_class import WorkOrder
 from src.decoding import solution_decoder
+from src.classes import WorkOrder
+from src.lists import technicians, work_orders
 from typing import List
 import numpy as np
 import pandas as pd
@@ -50,22 +52,13 @@ class assistantPlanner(Problem):
             sequence_positions = x[s_idx][1::2]
 
             schedule = solution_decoder(technicians_assignments, sequence_positions, self.work_orders)
-            F[s_idx,0] = self._weighted_completion_time(schedule)
+            F[s_idx,0] = self._weighted_completion_time()
             out["F"] = F
             #F[s_idx,1] = self._tardiness(schedule)
             #F[s_idx,2] = self._earliness(schedule)
 
-    def _weighted_completion_time(self, schedule):
-        twc = 0
-        for technician_schedule in schedule:
-            current_time = 0
-            prev_wo = None
-            for work_order in technician_schedule:
-                if prev_wo:
-                    current_time += get_travel_time(prev_wo, work_order)
-                current_time += work_order.processing_time
-                twc += work_order._get_weight() * current_time
-                prev_wo = work_order
+    def _weighted_completion_time(self):
+        twc = sum(work_order._get_weighted_completion_time() for work_order in work_orders)
         return twc        
 
 def get_travel_time(wo1,wo2):
@@ -105,3 +98,6 @@ res = minimize(
     ('n_gen', 100),
     verbose=True
 )
+
+print(res.X)
+# %%

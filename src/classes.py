@@ -2,13 +2,20 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 @dataclass
+class Technician:
+    id: int
+    first_name: str
+    last_name: str
+    skill: int
+
+@dataclass
 class WorkOrder:
     id: int
     processing_time: int
     breakdown: bool
     priority: str
     eligible_techs: int
-    last_inspection_date: str
+    last_inspection_date: str = None
     starting_time: int = None
 
     def _get_due_date(self):
@@ -30,3 +37,6 @@ class WorkOrder:
     
     def _get_weighted_completion_time(self):
         return (self.starting_time + self.processing_time) * self._get_weight()
+    def _get_tardiness(self):
+        if self.last_inspection_date != float('nan'):
+            return self.last_inspection_date - timedelta(minutes= self.starting_time + self.processing_time)
