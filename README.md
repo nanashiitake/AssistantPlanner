@@ -18,4 +18,6 @@ We will use the Total Weighted Completion time as our onbjective function
 We will use pymoo's Constraint Violation as penalty feature to try to respect job's deadlines.
 
 $C_t = S_t + P_t$
+
+
 $C_t - Deadline \le 0$
