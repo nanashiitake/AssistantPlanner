@@ -3,8 +3,10 @@ from pymoo.core.problem import Problem
 from pymoo.core.repair import Repair
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.constraints.as_penalty import ConstraintsAsPenalty
 from src.decoding import solution_decoder
 from src.classes import WorkOrder
+
 from src.lists import technicians, work_orders
 from typing import List
 import numpy as np
@@ -38,12 +40,13 @@ class assistantPlanner(Problem):
         super().__init__(
             n_var=self.n_var,
             n_obj=self.n_obj, 
-            n_ieq_constr=0,
+            n_ieq_constr=1,
             xl=np.zeros(self.n_work_orders*2),
             xu=np.column_stack([np.full(self.n_work_orders, self.n_technicians), np.ones(self.n_work_orders)]).flatten())
     def _evaluate(self, x, out, *args, **kwargs):
         F = np.zeros((x.shape[0], self.n_obj))
-        G = np.zeros((x.shape[0], 0))
+        G = np.zeros((x.shape[0], self.n_obj))
+        G1 = np.zeros((x.shape[0], self.n_obj))
         
 
         for s_idx in range(x.shape[0]):
@@ -53,13 +56,32 @@ class assistantPlanner(Problem):
 
             schedule = solution_decoder(technicians_assignments, sequence_positions, self.work_orders)
             F[s_idx,0] = self._weighted_completion_time()
+            G[s_idx,0] = self._tardiness()
+            G1[s_idx,0] = self._earliness()
             out["F"] = F
+            out["G"] = G
+            out["G1"] = G1
             #F[s_idx,1] = self._tardiness(schedule)
             #F[s_idx,2] = self._earliness(schedule)
 
     def _weighted_completion_time(self):
         twc = sum(work_order._get_weighted_completion_time() for work_order in work_orders)
-        return twc        
+        return twc
+    #def _tardiness(self):
+    #    tardiness = sum(work_order._get_tardiness() for work_order in work_orders)
+    def _tardiness(self):
+        tardiness = 0
+        for work_order in work_orders:
+            if type(work_order._get_due_date()) != type(None):
+                tardiness += work_order._get_tardiness()
+        return tardiness
+    def _earliness(self):
+        earliness = 0
+        for work_order in work_orders:
+            if type(work_order._get_due_date()) != type(None):
+                earliness+= work_order._get_tardiness()
+        return earliness
+            
 
 def get_travel_time(wo1,wo2):
     return 0
@@ -92,8 +114,7 @@ algorithm = NSGA2(
     repair=technicianEligibility(work_orders)
 )
 
-res = minimize(
-    problem,
+res = minimize(ConstraintsAsPenalty(problem, penalty=100.0),
     algorithm,
     ('n_gen', 100),
     verbose=True
