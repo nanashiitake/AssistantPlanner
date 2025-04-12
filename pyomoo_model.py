@@ -45,8 +45,9 @@ class assistantPlanner(Problem):
             xu=np.column_stack([np.full(self.n_work_orders, self.n_technicians), np.ones(self.n_work_orders)]).flatten())
     def _evaluate(self, x, out, *args, **kwargs):
         F = np.zeros((x.shape[0], self.n_obj))
-        G = np.zeros((x.shape[0], self.n_obj))
         G1 = np.zeros((x.shape[0], self.n_obj))
+        G2 = np.zeros((x.shape[0], self.n_obj))
+        G = np.zeros((x.shape[0], self.n_obj))
         
 
         for s_idx in range(x.shape[0]):
@@ -57,10 +58,11 @@ class assistantPlanner(Problem):
             schedule = solution_decoder(technicians_assignments, sequence_positions, self.work_orders)
             F[s_idx,0] = self._weighted_completion_time()
             G[s_idx,0] = self._tardiness()
-            G1[s_idx,0] = self._earliness()
+            #G2[s_idx,0] = self._earliness()
+            #G = np.column_stack([G1, G2])
             out["F"] = F
-            out["G"] = G
-            out["G1"] = G1
+            out["G"] = [G]
+            #out["G1"] = G1
             #F[s_idx,1] = self._tardiness(schedule)
             #F[s_idx,2] = self._earliness(schedule)
 
@@ -74,12 +76,12 @@ class assistantPlanner(Problem):
         for work_order in work_orders:
             if type(work_order._get_due_date()) != type(None):
                 tardiness += work_order._get_tardiness()
-        return tardiness
+        return tardiness 
     def _earliness(self):
         earliness = 0
         for work_order in work_orders:
             if type(work_order._get_due_date()) != type(None):
-                earliness+= work_order._get_tardiness()
+                earliness+= work_order._get_earliness()
         return earliness
             
 
@@ -109,14 +111,15 @@ technicians = pd.read_csv('data/tech_df.csv', converters={'MD_Skills': literal_e
 problem = assistantPlanner(7, work_orders, travel_times=np.zeros((len(work_orders), len(work_orders))))
 
 algorithm = NSGA2(
-    pop_size=400,
+    pop_size=200,
     eliminate_duplicates=True,
     repair=technicianEligibility(work_orders)
 )
 
-res = minimize(ConstraintsAsPenalty(problem, penalty=100.0),
+res = minimize(ConstraintsAsPenalty(problem, penalty=250.0),
+    ##ConstraintsAsObjective(problem), 
     algorithm,
-    ('n_gen', 100),
+    ('n_gen', 500),
     verbose=True
 )
 
