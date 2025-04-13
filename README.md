@@ -34,8 +34,6 @@ Soit pour $j$ un job, on définit son/sa:
 - $w_j$: weight.
 - $t_j = C_j - d_j$: tardiness.
 
-Note: One of the tardiness definitions was redundant and incorrect, so I removed it.
-
 ### La Fonction Objectif
 > La fonction objectif est la fonction qu'on souhaite optimiser (minimiser dans ce cas-ci).
 
