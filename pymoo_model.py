@@ -129,14 +129,5 @@ solution = solution_decoder(best_x[::2].astype(int), best_x[1::2], work_orders, 
 df = list_to_df(work_orders)
 
 fig1 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-04', '2024-11-09'])
-#fig1 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-04', '2024-11-05'])
-#fig2 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-05', '2024-11-06'])
-#fig3 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-06', '2024-11-07'])
-#fig4 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-07', '2024-11-08'])
-#fig5 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-08', '2024-11-09'])
 fig1.show()
-#fig2.show()
-#fig3.show()
-#fig4.show()
-#fig5.show()
 # %%
