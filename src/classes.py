@@ -22,6 +22,7 @@ class WorkOrder:
     def _get_due_date(self):
         if type(self.last_inspection_date) == str:
             date = datetime.strptime(self.last_inspection_date, '%Y-%m-%d')
+            date = date.replace(hour=12)
             due_date = date + timedelta(days=30)
         else:
             return None
