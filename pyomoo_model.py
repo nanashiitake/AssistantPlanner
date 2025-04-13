@@ -4,14 +4,18 @@ from pymoo.core.repair import Repair
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.constraints.as_penalty import ConstraintsAsPenalty
-from src.decoding import solution_decoder
-from src.classes import WorkOrder
 
+from src.decoding import solution_decoder
+from src.classes import WorkOrder, Technician
 from src.lists import technicians, work_orders
+from src.best_solution import get_best_solution
+from df_for_chart import list_to_df
+
 from typing import List
 import numpy as np
 import pandas as pd
 from ast import literal_eval
+import plotly.express as px
 
 
 class technicianEligibility(Repair):
@@ -30,13 +34,14 @@ class technicianEligibility(Repair):
 
 
 class assistantPlanner(Problem):
-    def __init__(self, n_technicians: int, work_orders: List[WorkOrder], travel_times: np.ndarray):
+    def __init__(self, n_technicians: int, work_orders: List[WorkOrder], travel_times: np.ndarray, technicians: List[Technician]):
         self.n_technicians = n_technicians
         self.work_orders = work_orders
         self.n_work_orders = len(work_orders)
         self.travel_times = travel_times
         self.n_var = self.n_work_orders*2
         self.n_obj = 1
+        self.technicians = technicians
         super().__init__(
             n_var=self.n_var,
             n_obj=self.n_obj, 
@@ -55,7 +60,7 @@ class assistantPlanner(Problem):
             technicians_assignments = x[s_idx][ ::2].astype(int)
             sequence_positions = x[s_idx][1::2]
 
-            schedule = solution_decoder(technicians_assignments, sequence_positions, self.work_orders)
+            schedule = solution_decoder(technicians_assignments, sequence_positions, self.work_orders, self.technicians)
             F[s_idx,0] = self._weighted_completion_time()
             G[s_idx,0] = self._tardiness()
             #G2[s_idx,0] = self._earliness()
@@ -77,12 +82,6 @@ class assistantPlanner(Problem):
             if type(work_order._get_due_date()) != type(None):
                 tardiness += work_order._get_tardiness()
         return tardiness 
-    def _earliness(self):
-        earliness = 0
-        for work_order in work_orders:
-            if type(work_order._get_due_date()) != type(None):
-                earliness+= work_order._get_earliness()
-        return earliness
             
 
 def get_travel_time(wo1,wo2):
@@ -104,24 +103,40 @@ def WorkOrders_from_df(df):
         workOrders.append(work_order)
     return(workOrders)
 
-work_orders = WorkOrders_from_df(work_orders_df)
-technicians = pd.read_csv('data/tech_df.csv', converters={'MD_Skills': literal_eval})
+#work_orders = WorkOrders_from_df(work_orders_df)
+#technicians = pd.read_csv('data/tech_df.csv', converters={'MD_Skills': literal_eval})
 
 
-problem = assistantPlanner(7, work_orders, travel_times=np.zeros((len(work_orders), len(work_orders))))
+problem = assistantPlanner(7, work_orders, travel_times=np.zeros((len(work_orders), len(work_orders))), technicians=technicians)
 
 algorithm = NSGA2(
-    pop_size=200,
+    pop_size=150,
     eliminate_duplicates=True,
     repair=technicianEligibility(work_orders)
 )
 
-res = minimize(ConstraintsAsPenalty(problem, penalty=250.0),
+res = minimize(ConstraintsAsPenalty(problem, penalty=15),
     ##ConstraintsAsObjective(problem), 
     algorithm,
     ('n_gen', 500),
     verbose=True
 )
 
-print(res.X)
+best_x, best_f = get_best_solution(res)
+solution = solution_decoder(best_x[::2].astype(int), best_x[1::2], work_orders, technicians)
+
+
+df = list_to_df(work_orders)
+
+
+fig1 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-04', '2024-11-05'])
+fig2 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-05', '2024-11-06'])
+fig3 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-06', '2024-11-07'])
+fig4 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-07', '2024-11-08'])
+fig5 = px.timeline(df, x_start="starting_time", x_end="completion_time", y="technician", color='breakdown', text='id', hover_data=['deadline'], range_x=['2024-11-08', '2024-11-09'])
+fig1.show()
+fig2.show()
+fig3.show()
+fig4.show()
+fig5.show()
 # %%

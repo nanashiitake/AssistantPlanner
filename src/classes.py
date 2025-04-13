@@ -17,6 +17,7 @@ class WorkOrder:
     eligible_techs: int
     last_inspection_date: str = None
     starting_time: int = None
+    assigned_tech: int = None
 
     def _get_due_date(self):
         if type(self.last_inspection_date) == str:
@@ -42,6 +43,10 @@ class WorkOrder:
         return (self.starting_time + self.processing_time) * self._get_weight()
     def _get_tardiness(self):
         if self.last_inspection_date != float('nan') and type(self._get_due_date) != type(None):
-            real_completion_time = datetime.strptime('4/11/2024', '%d/%m/%Y') + timedelta(minutes= self.starting_time + self.processing_time)
+            real_completion_time = datetime.strptime('4/11/2024/07:00', '%d/%m/%Y/%H:%M') + timedelta(minutes= self.starting_time + self.processing_time)
             return abs((real_completion_time - self._get_due_date()).total_seconds() / 60)
         return None
+    def _get_real_starting_time(self):
+        return datetime.strptime('4/11/2024/07:00', '%d/%m/%Y/%H:%M') + timedelta(minutes= self.starting_time)
+    def _get_real_completion(self):
+        return datetime.strptime('4/11/2024/07:00', '%d/%m/%Y/%H:%M') + timedelta(minutes= self.starting_time + self.processing_time)
